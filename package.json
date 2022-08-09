@@ -2,7 +2,7 @@
 	"name": "chakra-temps",
 	"version": "0.1.0",
 	"private": true,
-	"homepage": "https://mrrawatofficial.github.io/chakra-custom-comps/",
+	"homepage": "https://chakra-custom-comps.vercel.app/",
 	"dependencies": {
 		"@chakra-ui/react": "^2.2.6",
 		"@emotion/react": "^11",
