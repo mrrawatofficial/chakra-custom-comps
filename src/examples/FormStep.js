@@ -1,6 +1,14 @@
-import { Box, Container, Heading, HStack, VStack } from "@chakra-ui/react";
-import { Wizard, WizardStep } from "../components/Wizard";
+import {
+	Box,
+	Container,
+	Heading,
+	HStack,
+	Link,
+	VStack,
+} from "@chakra-ui/react";
 import * as Yup from "yup";
+import { Link as RouterLink } from "react-router-dom";
+import { Wizard, WizardStep } from "../components/Wizard";
 import { MyInput } from "../components/CustomInput";
 const FormStep = () => {
 	const schemas = [
@@ -23,6 +31,9 @@ const FormStep = () => {
 	];
 	return (
 		<Container maxW="2xl" bg="blue.200" minH={"100vh"} p={2}>
+			<Link as={RouterLink} to="/">
+				Back
+			</Link>
 			<Box padding="4" bg="blue.400" color="black" w="full">
 				<Heading as="h2" size="xl" color="black" textAlign={"center"} mb={3}>
 					Vertical Wizard
