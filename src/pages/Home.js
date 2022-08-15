@@ -25,6 +25,11 @@ const Home = () => {
 							File Input
 						</Link>
 					</ListItem>
+					<ListItem>
+						<Link as={RouterLink} to="/data-table">
+							Data Table
+						</Link>
+					</ListItem>
 				</OrderedList>
 			</Box>
 		</Container>
