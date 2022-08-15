@@ -33,10 +33,13 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useRef, useState } from "react";
 import { rankItem } from "@tanstack/match-sorter-utils";
-import { MdDeleteOutline } from "react-icons/md";
 import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { MdDeleteOutline } from "react-icons/md";
+import { VscFilePdf } from "react-icons/vsc";
+import { FaFileCsv } from "react-icons/fa";
+import { IoEyeOutline } from "react-icons/io5";
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
 	const itemRank = rankItem(row.getValue(columnId), value);
@@ -141,8 +144,12 @@ const MyTable = ({
 				<HStack flexGrow={1}>
 					{colVis && (
 						<Menu closeOnSelect={false}>
-							<MenuButton as={Button} colorScheme="primary">
-								Columns Visibility
+							<MenuButton
+								as={Button}
+								colorScheme="primary"
+								leftIcon={<IoEyeOutline />}
+							>
+								Show Columns
 							</MenuButton>
 							<MenuList minWidth="200px">
 								<VStack p={2} alignItems={"flex-start"}>
@@ -195,13 +202,18 @@ const MyTable = ({
 							headers={exportData.headers[0]}
 							data={data}
 							filename={`${exportFileName}.csv`}
+							leftIcon={<FaFileCsv />}
 							colorScheme="primary"
 						>
-							Export to Excel
+							Export Csv
 						</Button>
 					)}
 					{exportPdf && (
-						<Button colorScheme="secondary" onClick={() => exportToPDF()}>
+						<Button
+							colorScheme="secondary"
+							leftIcon={<VscFilePdf />}
+							onClick={() => exportToPDF()}
+						>
 							Export Pdf
 						</Button>
 					)}
