@@ -148,6 +148,7 @@ const MyTable = ({
 								as={Button}
 								colorScheme="primary"
 								leftIcon={<IoEyeOutline />}
+								size={tableStyle.size}
 							>
 								Show Columns
 							</MenuButton>
@@ -182,6 +183,7 @@ const MyTable = ({
 						<Select
 							value={table.getState().pagination.pageSize}
 							maxW={130}
+							size={tableStyle.size}
 							onChange={(e) => {
 								table.setPageSize(Number(e.target.value));
 							}}
@@ -204,6 +206,7 @@ const MyTable = ({
 							filename={`${exportFileName}.csv`}
 							leftIcon={<FaFileCsv />}
 							colorScheme="primary"
+							size={tableStyle.size}
 						>
 							Export Csv
 						</Button>
@@ -213,6 +216,7 @@ const MyTable = ({
 							colorScheme="secondary"
 							leftIcon={<VscFilePdf />}
 							onClick={() => exportToPDF()}
+							size={tableStyle.size}
 						>
 							Export Pdf
 						</Button>
@@ -229,12 +233,14 @@ const MyTable = ({
 									? deleteRows(table.getSelectedRowModel().flatRows)
 									: console.log("No deleteRows function");
 							}}
+							size={tableStyle.size}
 						>
 							Delete {Object.keys(rowSelection).length} Rows
 						</Button>
 					)}
 					{search && (
 						<DebouncedInput
+							size={tableStyle.size}
 							value={globalFilter ?? ""}
 							onChange={(value) => setGlobalFilter(String(value))}
 							placeholder="Search..."
@@ -396,6 +402,7 @@ const MyTable = ({
 						<Button
 							onClick={() => table.setPageIndex(0)}
 							disabled={!table.getCanPreviousPage()}
+							size={tableStyle.size}
 						>
 							{"<<"}
 						</Button>
@@ -403,6 +410,7 @@ const MyTable = ({
 						<Button
 							onClick={() => table.previousPage()}
 							disabled={!table.getCanPreviousPage()}
+							size={tableStyle.size}
 						>
 							{"<"}
 						</Button>
@@ -411,6 +419,7 @@ const MyTable = ({
 							borderRadius="0"
 							onClick={() => table.nextPage()}
 							disabled={!table.getCanNextPage()}
+							size={tableStyle.size}
 						>
 							{">"}
 						</Button>
@@ -418,6 +427,7 @@ const MyTable = ({
 						<Button
 							onClick={() => table.setPageIndex(table.getPageCount() - 1)}
 							disabled={!table.getCanNextPage()}
+							size={tableStyle.size}
 						>
 							{">>"}
 						</Button>

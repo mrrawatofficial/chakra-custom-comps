@@ -62,16 +62,19 @@ const DataTable = () => {
 							colorScheme="primary"
 							aria-label="View"
 							icon={<FiEye />}
+							size="sm"
 						/>
 						<IconButton
 							colorScheme="yellow"
 							aria-label="View"
 							icon={<BiEdit />}
+							size="sm"
 						/>
 						<IconButton
 							colorScheme="red"
 							aria-label="Delete"
 							icon={<FiTrash2 />}
+							size="sm"
 						/>
 					</ButtonGroup>
 				);
