@@ -142,6 +142,25 @@ const MyTable = ({
 				my={2}
 			>
 				<HStack flexGrow={1}>
+					{showPageSize && (
+						<Select
+							value={table.getState().pagination.pageSize}
+							maxW={130}
+							size={tableStyle.size}
+							onChange={(e) => {
+								table.setPageSize(Number(e.target.value));
+							}}
+							_dark={{
+								color: "white",
+							}}
+						>
+							{[10, 20, 30, 50, 100].map((pageSize) => (
+								<option key={pageSize} value={pageSize}>
+									Show {pageSize}
+								</option>
+							))}
+						</Select>
+					)}
 					{colVis && (
 						<Menu closeOnSelect={false}>
 							<MenuButton
@@ -152,7 +171,7 @@ const MyTable = ({
 							>
 								Show Columns
 							</MenuButton>
-							<MenuList minWidth="200px">
+							<MenuList minWidth="200px" shadow={"2xl"}>
 								<VStack p={2} alignItems={"flex-start"}>
 									{table.getAllLeafColumns().map((column) => {
 										return (
@@ -179,25 +198,7 @@ const MyTable = ({
 							</MenuList>
 						</Menu>
 					)}
-					{showPageSize && (
-						<Select
-							value={table.getState().pagination.pageSize}
-							maxW={130}
-							size={tableStyle.size}
-							onChange={(e) => {
-								table.setPageSize(Number(e.target.value));
-							}}
-							_dark={{
-								color: "white",
-							}}
-						>
-							{[10, 20, 30, 50, 100].map((pageSize) => (
-								<option key={pageSize} value={pageSize}>
-									Show {pageSize}
-								</option>
-							))}
-						</Select>
-					)}
+					{filterComponent && filterComponent}
 					{exportExcel && (
 						<Button
 							as={CSVLink}
@@ -221,7 +222,6 @@ const MyTable = ({
 							Export Pdf
 						</Button>
 					)}
-					{filterComponent && filterComponent}
 				</HStack>
 				<HStack>
 					{Object.keys(rowSelection).length > 0 && (
@@ -255,7 +255,7 @@ const MyTable = ({
 			) : (
 				<TableContainer whiteSpace="normal">
 					{isLoading ? (
-						<Center>{loaderComponent || "Loading data..."}</Center>
+						<Center py={3}>{loaderComponent || "Loading data..."}</Center>
 					) : (
 						<Table
 							variant={tableStyle.variant || "simple"}

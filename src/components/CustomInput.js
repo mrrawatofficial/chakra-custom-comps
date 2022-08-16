@@ -40,8 +40,10 @@ export const MyInput = ({ label, rules, ...props }) => {
 				}}
 				_light={{
 					color: "gray.700",
+					// borderColor: "gray.500",
 				}}
 				borderWidth={1}
+				boxShadow="none"
 				{...props}
 			/>
 			{meta.touched && meta.error ? (
