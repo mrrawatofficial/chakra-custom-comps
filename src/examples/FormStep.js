@@ -1,11 +1,4 @@
-import {
-	Box,
-	Container,
-	Heading,
-	HStack,
-	Link,
-	VStack,
-} from "@chakra-ui/react";
+import { Box, Container, Heading, HStack, Link } from "@chakra-ui/react";
 import * as Yup from "yup";
 import { Link as RouterLink } from "react-router-dom";
 import { Wizard, WizardStep } from "../components/Wizard";
@@ -17,24 +10,25 @@ const FormStep = () => {
 			project_description: Yup.string().required(
 				"Project description is required"
 			),
+			state: Yup.string().required("State is required"),
 		}),
 		Yup.object().shape({
 			team_name: Yup.string().required("Team name is required"),
 			team_description: Yup.string().required("Team description is required"),
 		}),
-		Yup.object().shape({
-			payment_amount: Yup.string().required("Payment amount is required"),
-			payment_description: Yup.string().required(
-				"Payment description is required"
-			),
-		}),
+		// Yup.object().shape({
+		// 	payment_amount: Yup.string().required("Payment amount is required"),
+		// 	payment_description: Yup.string().required(
+		// 		"Payment description is required"
+		// 	),
+		// }),
 	];
 	return (
 		<Container maxW="2xl" bg="blue.200" minH={"100vh"} p={2}>
 			<Link as={RouterLink} to="/">
 				Back
 			</Link>
-			<Box padding="4" bg="blue.400" color="black" w="full">
+			{/* <Box padding="4" bg="blue.400" color="black" w="full">
 				<Heading as="h2" size="xl" color="black" textAlign={"center"} mb={3}>
 					Vertical Wizard
 				</Heading>
@@ -329,7 +323,7 @@ const FormStep = () => {
 						</VStack>
 					</WizardStep>
 				</Wizard>
-			</Box>
+			</Box> */}
 			<Box padding="4" bg="blue.400" color="black" w="full">
 				<Heading as="h2" size="xl" color="black" textAlign={"center"} mb={3}>
 					No Stepper Wizard
@@ -341,17 +335,32 @@ const FormStep = () => {
 					initialValues={{
 						project_name: "",
 						project_description: "",
+						state: "",
 						team_name: "",
 						team_description: "",
-						payment_amount: "",
-						payment_description: "",
+						// payment_amount: "",
+						// payment_description: "",
 					}}
+					validationSchema={schemas}
 					stepper={false}
 				>
 					<WizardStep title="Project details">
 						<HStack>
 							<MyInput label="Project name" name="project_name" />
 							<MyInput label="Project description" name="project_description" />
+						</HStack>
+						<HStack>
+							<MyInput select label="Select State" name="state">
+								<option value="option1">Option 1</option>
+								<option value="option2">Option 2</option>
+								<option value="option3">Option 3</option>
+							</MyInput>
+							{/* <Select></Select> */}
+							{/* <Select placeholder="Select option">
+								<option value="option1">Option 1</option>
+								<option value="option2">Option 2</option>
+								<option value="option3">Option 3</option>
+							</Select> */}
 						</HStack>
 					</WizardStep>
 					<WizardStep title="Team details">
@@ -360,12 +369,12 @@ const FormStep = () => {
 							<MyInput label="Team description" name="team_description" />
 						</HStack>
 					</WizardStep>
-					<WizardStep title="Payment details">
+					{/* <WizardStep title="Payment details">
 						<VStack spacing={3}>
 							<MyInput label="Payment amount" name="payment_amount" />
 							<MyInput label="Payment description" name="payment_description" />
 						</VStack>
-					</WizardStep>
+					</WizardStep> */}
 				</Wizard>
 			</Box>
 		</Container>

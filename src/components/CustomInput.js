@@ -11,14 +11,14 @@ import {
 	CloseButton,
 	HStack,
 	Image,
+	Select,
 	Text,
 } from "@chakra-ui/react";
 import { useField } from "formik";
 import { useId, useState } from "react";
 
-export const MyInput = ({ label, rules, ...props }) => {
+export const MyInput = ({ label, select, rules, children, ...props }) => {
 	const [field, meta] = useField(props);
-
 	return (
 		<FormControl isInvalid={Boolean(meta.touched && meta.error)}>
 			<FormLabel
@@ -32,20 +32,30 @@ export const MyInput = ({ label, rules, ...props }) => {
 				{label}{" "}
 				{rules && rules.required && <span style={{ color: "red" }}>*</span>}
 			</FormLabel>
-			<Input
-				{...field}
-				variant="outline"
-				_dark={{
-					color: "gray.300",
-				}}
-				_light={{
-					color: "gray.700",
-					// borderColor: "gray.500",
-				}}
-				borderWidth={1}
-				boxShadow="none"
-				{...props}
-			/>
+			{select ? (
+				<Select
+					placeholder={label}
+					focusBorderColor={"primary.500"}
+					{...field}
+					{...props}
+				>
+					{children}
+				</Select>
+			) : (
+				<Input
+					{...field}
+					variant="outline"
+					_dark={{
+						color: "gray.300",
+					}}
+					_light={{
+						color: "gray.700",
+					}}
+					borderWidth={1}
+					boxShadow="none"
+					{...props}
+				/>
+			)}
 			{meta.touched && meta.error ? (
 				<FormErrorMessage>{meta.error}</FormErrorMessage>
 			) : null}
