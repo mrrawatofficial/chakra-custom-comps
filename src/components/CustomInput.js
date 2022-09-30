@@ -13,11 +13,19 @@ import {
 	Image,
 	Select,
 	Text,
+	Textarea,
 } from "@chakra-ui/react";
 import { useField } from "formik";
 import { useId, useState } from "react";
 
-export const MyInput = ({ label, select, rules, children, ...props }) => {
+export const MyInput = ({
+	label,
+	select,
+	textarea,
+	rules,
+	children,
+	...props
+}) => {
 	const [field, meta] = useField(props);
 	return (
 		<FormControl isInvalid={Boolean(meta.touched && meta.error)}>
@@ -32,15 +40,43 @@ export const MyInput = ({ label, select, rules, children, ...props }) => {
 				{label}{" "}
 				{rules && rules.required && <span style={{ color: "red" }}>*</span>}
 			</FormLabel>
+
 			{select ? (
 				<Select
-					placeholder={label}
+					borderColor={"gray.500"}
+					borderWidth={1}
+					placeholder={`Select ${label}`}
 					focusBorderColor={"primary.500"}
 					{...field}
+					_dark={{
+						color: "gray.300",
+					}}
+					_light={{
+						color: "gray.700",
+					}}
 					{...props}
 				>
 					{children}
 				</Select>
+			) : textarea ? (
+				<Textarea
+					{...field}
+					variant="outline"
+					_dark={{
+						color: "gray.300",
+						borderColor: "gray.500",
+					}}
+					_light={{
+						color: "gray.700",
+						borderColor: "gray.500",
+					}}
+					borderWidth={1}
+					focusBorderColor="primary.500"
+					boxShadow="none"
+					placeholder={`Enter ${label}`}
+					value={field.value || ""}
+					{...props}
+				/>
 			) : (
 				<Input
 					{...field}
@@ -53,6 +89,8 @@ export const MyInput = ({ label, select, rules, children, ...props }) => {
 					}}
 					borderWidth={1}
 					boxShadow="none"
+					placeholder={`Enter ${label}`}
+					value={field.value || ""}
 					{...props}
 				/>
 			)}
@@ -63,12 +101,12 @@ export const MyInput = ({ label, select, rules, children, ...props }) => {
 	);
 };
 
-export const MyFileInput = ({ label, rules, ...props }) => {
+export const MyFileInput = ({ label, rules, innerRef, ...props }) => {
 	const [field, meta, helpers] = useField(props);
 	const [file, setFile] = useState(null);
 	const [dragged, setDragged] = useState(false);
 	const id = useId();
-	const errorColor = meta.touched && meta.error ? "red.500" : "gray.300";
+	const errorColor = meta.touched && meta.error ? "red.500" : "gray.500";
 	const showPreview = rules.preview ? rules.preview : false;
 	const multiple = rules.multiple;
 	const drop = (event) => {
@@ -95,6 +133,7 @@ export const MyFileInput = ({ label, rules, ...props }) => {
 				borderRadius="lg"
 				borderStyle={meta.touched && meta.error ? "solid" : "dashed"}
 				p={50}
+				width={"full"}
 				textAlign="center"
 				_light={{
 					bg: dragged ? "primary.800" : "transparent",
@@ -132,6 +171,7 @@ export const MyFileInput = ({ label, rules, ...props }) => {
 					)}
 				</Text>
 				<Input
+					ref={innerRef}
 					id={id}
 					type="file"
 					transform={"scale(0)"}
@@ -220,22 +260,52 @@ export const MyFileInput = ({ label, rules, ...props }) => {
 									const newFile = Array.from(file).filter(
 										(_single, _i) => _i !== i
 									);
-									console.log(newFile);
 									setFile(newFile);
-									helpers.setValue(newFile);
+									if (newFile.length > 0) {
+										helpers.setValue(newFile);
+									} else {
+										helpers.setValue(null);
+									}
 								}}
 							/>
 							<FilePreview file={single} />
 						</Box>
 					))}
 				</HStack>
-			) : null}
+			) : (
+				field?.value?.length > 0 && (
+					<HStack gap={2} wrap={"wrap"} justifyContent={"center"}>
+						{field?.value?.map((img, i) => (
+							<Box
+								key={i}
+								w={100}
+								h={100}
+								my={2}
+								marginInlineStart={"0!important"}
+								borderRadius="lg"
+								overflow={"hidden"}
+								position={"relative"}
+								_light={{
+									bg: "gray.100",
+								}}
+								_dark={{
+									bg: "gray.900",
+								}}
+							>
+								<FilePreview img={img} />
+							</Box>
+						))}
+					</HStack>
+				)
+			)}
 		</>
 	);
 };
 
-const FilePreview = ({ file }) => {
-	const type = file.name.split(".").pop().toLowerCase();
+const FilePreview = ({ file, img }) => {
+	const type = !img
+		? file.name.split(".").pop().toLowerCase()
+		: img.split(".").pop().toLowerCase();
 	const imageType = [
 		"png",
 		"jpg",
@@ -278,8 +348,8 @@ const FilePreview = ({ file }) => {
 	if (imageType.includes(type)) {
 		return (
 			<Image
-				src={URL.createObjectURL(file)}
-				alt={file.name}
+				src={!img ? URL.createObjectURL(file) : img}
+				alt={!img ? file.name : img}
 				objectFit="contain!important"
 				h={"100%"}
 				w={"100%"}
@@ -290,7 +360,12 @@ const FilePreview = ({ file }) => {
 	if (videoType.includes(type)) {
 		return (
 			<AspectRatio ratio={16 / 9}>
-				<video src={URL.createObjectURL(file)} alt={file.name} h={50} w={50} />
+				<video
+					src={!img ? URL.createObjectURL(file) : img}
+					alt={!img ? file.name : img}
+					h={50}
+					w={50}
+				/>
 			</AspectRatio>
 		);
 	}
@@ -298,9 +373,9 @@ const FilePreview = ({ file }) => {
 		return (
 			<AspectRatio ratio={1 / 1}>
 				<iframe
-					title={file.name}
-					src={URL.createObjectURL(file)}
-					alt={file.name}
+					title={!img ? file.name : img}
+					src={!img ? URL.createObjectURL(file) : img}
+					alt={!img ? file.name : img}
 					h={50}
 					w={50}
 				/>

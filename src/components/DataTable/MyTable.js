@@ -115,7 +115,7 @@ const MyTable = ({
 	useEffect(() => {
 		setTimeout(() => {
 			setIsLoading(false);
-		}, 1000);
+		}, 500);
 	}, [table.state]);
 	useEffect(() => {
 		let headers = table.getHeaderGroups().map((headerGroup) => {
@@ -140,13 +140,16 @@ const MyTable = ({
 				direction={"row"}
 				wrap={"wrap"}
 				my={2}
+				gap={2}
 			>
-				<HStack flexGrow={1}>
+				<Stack flexGrow={1} direction={["column", "row"]}>
 					{showPageSize && (
 						<Select
 							value={table.getState().pagination.pageSize}
-							maxW={130}
+							maxW={200}
 							size={tableStyle.size}
+							borderColor={"gray.500"}
+							focusBorderColor={"primary.500"}
 							onChange={(e) => {
 								table.setPageSize(Number(e.target.value));
 							}}
@@ -168,6 +171,7 @@ const MyTable = ({
 								colorScheme="primary"
 								leftIcon={<IoEyeOutline />}
 								size={tableStyle.size}
+								maxW={200}
 							>
 								Show Columns
 							</MenuButton>
@@ -208,6 +212,7 @@ const MyTable = ({
 							leftIcon={<FaFileCsv />}
 							colorScheme="primary"
 							size={tableStyle.size}
+							maxW={200}
 						>
 							Export Csv
 						</Button>
@@ -222,12 +227,13 @@ const MyTable = ({
 							Export Pdf
 						</Button>
 					)}
-				</HStack>
-				<HStack>
+				</Stack>
+				<HStack marginInlineStart={"0!important"}>
 					{Object.keys(rowSelection).length > 0 && (
 						<Button
 							colorScheme="red"
 							leftIcon={<MdDeleteOutline />}
+							maxW={200}
 							onClick={() => {
 								deleteRows
 									? deleteRows(table.getSelectedRowModel().flatRows)
@@ -285,6 +291,8 @@ const MyTable = ({
 												whiteSpace="nowrap"
 												colSpan={header.colSpan}
 												cursor="pointer"
+												borderWidth={2}
+												borderColor="gray.300"
 												paddingBlock={tableStyle.headPadding || 4}
 												{...{
 													onClick: sort
@@ -322,6 +330,8 @@ const MyTable = ({
 											<Td
 												key={cell.id}
 												isNumeric={cell.column.columnDef.isNumeric}
+												borderWidth={2}
+												borderColor="gray.300"
 											>
 												{cell.column.columnDef.tooltip ? (
 													<Tooltip
@@ -461,12 +471,12 @@ export const DebouncedInput = ({
 
 	return (
 		<Input
-			{...props}
 			value={value}
 			maxW={200}
 			type="search"
 			variant="outline"
 			onChange={(e) => setValue(e.target.value)}
+			focusBorderColor="primary.500"
 			_light={{
 				bg: "white",
 			}}
@@ -474,6 +484,7 @@ export const DebouncedInput = ({
 				bg: "gray.800",
 				color: "white",
 			}}
+			{...props}
 		/>
 	);
 };
