@@ -5,6 +5,7 @@ import {
 	Container,
 	Heading,
 	IconButton,
+	Input,
 	Link,
 	Spinner,
 } from "@chakra-ui/react";
@@ -16,8 +17,9 @@ import { BiEdit } from "react-icons/bi";
 // import { AiOutlineCalendar } from "react-icons/ai";
 
 const DataTable = () => {
-	const [data, setData] = useState([]);
 	const columnHelper = createColumnHelper();
+	const [data, setData] = useState([]);
+	const [search, setSearch] = useState("");
 	// const Filter = () => {
 	// 	return (
 	// 		<>
@@ -164,15 +166,31 @@ const DataTable = () => {
 		const ids = rows.map((row) => row.original.id);
 		console.log(ids);
 	};
+
+	const handleFilter = async (value) => {
+		if (value) {
+			setSearch(String(value));
+			const filteredItems = data.filter((d1) => {
+				return (
+					d1.title?.toLowerCase().includes(value?.toLowerCase()) ||
+					d1.body?.toLowerCase().includes(value?.toLowerCase())
+				);
+			});
+			setData(filteredItems);
+		} else {
+			fetchData();
+		}
+	};
+	const fetchData = async () => {
+		const response = await fetch(
+			"https://jsonplaceholder.typicode.com/posts"
+			// "https://jsonplaceholder.typicode.com/users"
+		);
+		const json = await response.json();
+		setData(json);
+	};
+
 	useEffect(() => {
-		const fetchData = async () => {
-			const response = await fetch(
-				"https://jsonplaceholder.typicode.com/posts"
-				// "https://jsonplaceholder.typicode.com/users"
-			);
-			const json = await response.json();
-			setData(json);
-		};
 		fetchData();
 	}, []);
 	return (
@@ -184,6 +202,12 @@ const DataTable = () => {
 				<Heading as="h2" size="xl" color="black" textAlign={"center"} mb={3}>
 					Data Table
 				</Heading>
+				<DebouncedInput
+					size={"sm"}
+					value={search ?? ""}
+					onChange={handleFilter}
+					placeholder="Search..."
+				/>
 				<MyTable
 					columns={columns}
 					data={data}
@@ -205,3 +229,43 @@ const DataTable = () => {
 	);
 };
 export default DataTable;
+
+export const DebouncedInput = ({
+	value: initialValue,
+	onChange,
+	debounce = 500,
+	...props
+}) => {
+	const [value, setValue] = useState(initialValue);
+
+	useEffect(() => {
+		setValue(initialValue);
+	}, [initialValue]);
+
+	useEffect(() => {
+		const timeout = setTimeout(() => {
+			onChange(value);
+		}, debounce);
+
+		return () => clearTimeout(timeout);
+	}, [value, debounce, onChange]);
+
+	return (
+		<Input
+			value={value}
+			maxW={200}
+			type="search"
+			variant="outline"
+			onChange={(e) => setValue(e.target.value)}
+			focusBorderColor="primary.500"
+			_light={{
+				bg: "white",
+			}}
+			_dark={{
+				bg: "gray.800",
+				color: "white",
+			}}
+			{...props}
+		/>
+	);
+};
