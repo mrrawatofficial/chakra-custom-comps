@@ -5,7 +5,6 @@ import {
 	Container,
 	Heading,
 	IconButton,
-	Input,
 	Link,
 	Spinner,
 } from "@chakra-ui/react";
@@ -20,8 +19,10 @@ const DataTable = () => {
 	const [data, setData] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [pNo, setPNo] = useState(1);
-	const [pageSize, setPageSize] = useState("10");
+	const [pageSize, setPageSize] = useState("100");
 	const [totalPages, setTotalPages] = useState(0);
+
+	// const scrollRef = useRef();
 
 	const columns = [
 		selectable,
@@ -76,6 +77,7 @@ const DataTable = () => {
 			);
 			const json = await response.json();
 			if (json.status) {
+				// setData([...data, ...json.data]);
 				setData(json.data);
 				setTotalPages(Math.ceil(json.count / +pageSize));
 			} else {
@@ -87,6 +89,15 @@ const DataTable = () => {
 		setIsLoading(false);
 	};
 
+	// const loadMore = async () => {
+	// 	if (
+	// 		scrollRef.current.offsetHeight + scrollRef.current.scrollTop ===
+	// 		scrollRef.current.scrollHeight
+	// 	) {
+	// 		setPNo((prev) => prev + 1);
+	// 	}
+	// };
+
 	useEffect(() => {
 		fetchData();
 	}, [pNo, pageSize]);
@@ -97,7 +108,7 @@ const DataTable = () => {
 			</Link>
 			<Box padding="4" bg="blue.400" color="black" w="full">
 				<Heading as="h2" size="xl" color="black" textAlign={"center"} mb={3}>
-					Data Table
+					Data Table {data.length}
 				</Heading>
 				<MyTable
 					columns={columns}
@@ -115,56 +126,16 @@ const DataTable = () => {
 						bg: "white",
 						size: "sm",
 					}}
-					pagination={{
-						totalPages,
-						pageNo: pNo,
-						pageSize,
-						setPageSize,
-						onChange: setPNo,
-					}}
+					// pagination={{
+					// 	totalPages,
+					// 	pageNo: pNo,
+					// 	pageSize,
+					// 	setPageSize,
+					// 	onChange: setPNo,
+					// }}
 				/>
 			</Box>
 		</Container>
 	);
 };
 export default DataTable;
-
-export const DebouncedInput = ({
-	value: initialValue,
-	onChange,
-	debounce = 500,
-	...props
-}) => {
-	const [value, setValue] = useState(initialValue);
-
-	useEffect(() => {
-		setValue(initialValue);
-	}, [initialValue]);
-
-	useEffect(() => {
-		const timeout = setTimeout(() => {
-			onChange(value);
-		}, debounce);
-
-		return () => clearTimeout(timeout);
-	}, [value, debounce, onChange]);
-
-	return (
-		<Input
-			value={value}
-			maxW={200}
-			type="search"
-			variant="outline"
-			onChange={(e) => setValue(e.target.value)}
-			focusBorderColor="primary.500"
-			_light={{
-				bg: "white",
-			}}
-			_dark={{
-				bg: "gray.800",
-				color: "white",
-			}}
-			{...props}
-		/>
-	);
-};

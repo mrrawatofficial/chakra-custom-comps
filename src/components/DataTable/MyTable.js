@@ -31,7 +31,7 @@ import {
 	getSortedRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { rankItem } from "@tanstack/match-sorter-utils";
 import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
@@ -72,7 +72,7 @@ const MyTable = ({
 	customExData = null,
 	customExHeader = null,
 	isLoading = false,
-	pagination,
+	pagination = {},
 }) => {
 	const [sorting, setSorting] = useState([]);
 	const [columnVisibility, setColumnVisibility] = useState({});
@@ -151,13 +151,18 @@ const MyTable = ({
 				<Stack flexGrow={1} direction={["column", "row"]}>
 					{showPageSize && (
 						<Select
-							value={pagination.pageSize}
+							value={
+								pagination?.pageSize || table.getState().pagination.pageSize
+							}
 							maxW={200}
 							size={tableStyle.size}
 							borderColor={"gray.500"}
 							focusBorderColor={"primary.500"}
 							onChange={(e) => {
-								pagination.setPageSize(e.target.value);
+								table.setPageSize(e.target.value);
+								if (pagination.onChange) {
+									pagination.setPageSize(e.target.value);
+								}
 							}}
 							_dark={{
 								color: "white",
@@ -271,9 +276,6 @@ const MyTable = ({
 				</Center>
 			) : (
 				<TableContainer whiteSpace="normal">
-					{/* {isLoading ? (
-						<Center py={3}>{loaderComponent || "Loading data..."}</Center>
-					) : ( */}
 					<Table
 						variant={tableStyle.variant || "simple"}
 						colorScheme={tableStyle.colorScheme || "primary"}
@@ -415,7 +417,6 @@ const MyTable = ({
 							</Tfoot>
 						)}
 					</Table>
-					{/* )} */}
 				</TableContainer>
 			)}
 			<Box
@@ -435,9 +436,9 @@ const MyTable = ({
 					</Text>
 				)}
 				<Pagination
-					table={table}
 					tableStyle={tableStyle}
 					pagination={pagination}
+					table={table}
 				/>
 			</Box>
 		</>
@@ -523,31 +524,42 @@ export const IndeterminateCheckbox = ({ ...rest }) => {
 	);
 };
 
-export const Pagination = ({ tableStyle, pagination }) => {
+export const Pagination = ({ tableStyle, pagination, table }) => {
 	return (
 		<HStack spacing={5}>
 			<HStack>
 				<Text>Page</Text>
 				<Text as={"strong"}>
-					{pagination.pageNo} of {pagination.totalPages}
+					{pagination.pageNo || table.getState().pagination.pageIndex + 1} of{" "}
+					{pagination.totalPages || table.getPageCount()}
 				</Text>
 			</HStack>
-			<ButtonGroup colorScheme="primary" isAttached>
+			<ButtonGroup colorScheme="primary" isAttached size={tableStyle.size}>
 				<Button
 					borderRadius="0"
-					size={tableStyle.size}
-					colorScheme={"primary"}
-					onClick={() => pagination.onChange(1)}
-					disabled={pagination.pageNo === 1}
+					onClick={() =>
+						pagination.pageNo ? pagination.onChange(1) : table.setPageIndex(0)
+					}
+					disabled={
+						pagination.pageNo
+							? pagination.pageNo === 1
+							: !table.getCanPreviousPage()
+					}
 				>
 					{"<<"}
 				</Button>
 				<Button
-					disabled={pagination.pageNo === 1}
+					disabled={
+						pagination.pageNo
+							? pagination.pageNo === 1
+							: !table.getCanPreviousPage()
+					}
 					borderRadius="0"
-					size={tableStyle.size}
-					colorScheme={"primary"}
-					onClick={() => pagination.onChange(pagination.pageNo - 1)}
+					onClick={() =>
+						pagination.pageNo
+							? pagination.onChange(pagination.pageNo - 1)
+							: table.previousPage()
+					}
 				>
 					{"<"}
 				</Button>
@@ -569,20 +581,32 @@ export const Pagination = ({ tableStyle, pagination }) => {
 						</Button>
 					))} */}
 				<Button
-					disabled={pagination.pageNo === pagination.totalPages}
+					disabled={
+						pagination.pageNo
+							? pagination.pageNo === pagination.totalPages
+							: !table.getCanNextPage()
+					}
 					borderRadius="0"
-					size={tableStyle.size}
-					colorScheme={"primary"}
-					onClick={() => pagination.onChange(pagination.pageNo + 1)}
+					onClick={() =>
+						pagination.onChange
+							? pagination.onChange(pagination.pageNo + 1)
+							: table.nextPage()
+					}
 				>
 					{">"}
 				</Button>
 				<Button
 					borderRadius="0"
-					size={tableStyle.size}
-					colorScheme={"primary"}
-					onClick={() => pagination.onChange(pagination.totalPages)}
-					disabled={pagination.pageNo === pagination.totalPages}
+					onClick={() =>
+						pagination.onChange
+							? pagination.onChange(pagination.totalPages)
+							: table.setPageIndex(table.getPageCount() - 1)
+					}
+					disabled={
+						pagination.pageNo
+							? pagination.pageNo === pagination.totalPages
+							: !table.getCanNextPage()
+					}
 				>
 					{">>"}
 				</Button>
@@ -590,16 +614,3 @@ export const Pagination = ({ tableStyle, pagination }) => {
 		</HStack>
 	);
 };
-
-// export const usePagination = ({
-// 	totalCount,
-// 	pageSize,
-// 	siblingCount = 1,
-// 	currentPage,
-// }) => {
-// 	const paginationRange = useMemo(() => {
-// 		// Our implementation logic will go here
-// 	}, [totalCount, pageSize, siblingCount, currentPage]);
-
-// 	return paginationRange;
-// };
