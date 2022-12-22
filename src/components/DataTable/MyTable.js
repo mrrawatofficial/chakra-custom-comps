@@ -31,7 +31,7 @@ import {
 	getSortedRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { rankItem } from "@tanstack/match-sorter-utils";
 import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
@@ -40,6 +40,7 @@ import { MdDeleteOutline } from "react-icons/md";
 import { VscFilePdf } from "react-icons/vsc";
 import { FaFileCsv } from "react-icons/fa";
 import { IoEyeOutline } from "react-icons/io5";
+import { useLayoutEffect } from "react";
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
 	const itemRank = rankItem(row.getValue(columnId), value);
@@ -60,17 +61,25 @@ const MyTable = ({
 	loaderComponent = null,
 	noDataComponent = null,
 	filterComponent = null,
-	deleteRows,
+	multiRows,
 	exportExcel = true,
 	exportFileName = "export",
 	exportPdf = true,
+	customFilter,
+	exportHeader = 0,
+	pdfTitle,
+	footer = false,
+	customExData = null,
+	customExHeader = null,
+	isLoading = false,
+	pagination,
 }) => {
-	const [isLoading, setIsLoading] = useState(true);
 	const [sorting, setSorting] = useState([]);
 	const [columnVisibility, setColumnVisibility] = useState({});
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [rowSelection, setRowSelection] = useState({});
 	const [exportData, setExportData] = useState({ headers: [] });
+
 	const table = useReactTable({
 		data: data,
 		columns,
@@ -96,11 +105,14 @@ const MyTable = ({
 		const orientation = "portrait";
 		const doc = new jsPDF(orientation, unit, size);
 		doc.setFontSize(15);
-		const title = exportFileName.toUpperCase() + " - DATA";
+		const title = pdfTitle
+			? pdfTitle.toUpperCase()
+			: exportFileName.toUpperCase();
+		const headerData = customExHeader || exportData.headers[exportHeader];
 		let content = {
 			startY: 50,
-			body: data,
-			columns: exportData.headers[0].map((elt) => {
+			body: customExData || data,
+			columns: headerData.map((elt) => {
 				return {
 					title: elt.label,
 					dataKey: elt.key,
@@ -108,16 +120,10 @@ const MyTable = ({
 			}),
 		};
 		doc.text(title, 40, 40);
-
 		doc.autoTable(content);
 		doc.save(`${exportFileName}.pdf`);
 	};
-	useEffect(() => {
-		setTimeout(() => {
-			setIsLoading(false);
-		}, 500);
-	}, [table.state]);
-	useEffect(() => {
+	useLayoutEffect(() => {
 		let headers = table.getHeaderGroups().map((headerGroup) => {
 			return headerGroup.headers
 				.filter((exportable) => exportable.column.columnDef.exportAble)
@@ -145,19 +151,19 @@ const MyTable = ({
 				<Stack flexGrow={1} direction={["column", "row"]}>
 					{showPageSize && (
 						<Select
-							value={table.getState().pagination.pageSize}
+							value={pagination.pageSize}
 							maxW={200}
 							size={tableStyle.size}
 							borderColor={"gray.500"}
 							focusBorderColor={"primary.500"}
 							onChange={(e) => {
-								table.setPageSize(Number(e.target.value));
+								pagination.setPageSize(e.target.value);
 							}}
 							_dark={{
 								color: "white",
 							}}
 						>
-							{[10, 20, 30, 50, 100].map((pageSize) => (
+							{["10", "20", "30", "50", "100"].map((pageSize) => (
 								<option key={pageSize} value={pageSize}>
 									Show {pageSize}
 								</option>
@@ -188,6 +194,7 @@ const MyTable = ({
 												display={
 													column.id.toLowerCase() === "select" ? "none" : "flex"
 												}
+												colorScheme="primary"
 												defaultChecked={column.getIsVisible()}
 												onChange={column.getToggleVisibilityHandler()}
 												_dark={{
@@ -206,8 +213,8 @@ const MyTable = ({
 					{exportExcel && (
 						<Button
 							as={CSVLink}
-							headers={exportData.headers[0]}
-							data={data}
+							headers={customExHeader || exportData.headers[exportHeader]}
+							data={customExData || data}
 							filename={`${exportFileName}.csv`}
 							leftIcon={<FaFileCsv />}
 							colorScheme="primary"
@@ -229,19 +236,23 @@ const MyTable = ({
 					)}
 				</Stack>
 				<HStack marginInlineStart={"0!important"}>
+					{customFilter && customFilter}
 					{Object.keys(rowSelection).length > 0 && (
 						<Button
-							colorScheme="red"
-							leftIcon={<MdDeleteOutline />}
-							maxW={200}
+							colorScheme={multiRows?.bg ? multiRows?.bg : "red"}
+							leftIcon={multiRows?.icon ? multiRows?.icon : <MdDeleteOutline />}
+							maxW={250}
 							onClick={() => {
-								deleteRows
-									? deleteRows(table.getSelectedRowModel().flatRows)
-									: console.log("No deleteRows function");
+								multiRows.show
+									? multiRows?.handlemultiple(
+											table.getSelectedRowModel().flatRows
+									  )
+									: console.log("No function declared for multiple select");
 							}}
 							size={tableStyle.size}
 						>
-							Delete {Object.keys(rowSelection).length} Rows
+							{multiRows?.text ? multiRows?.text : "Delete"}{" "}
+							{Object.keys(rowSelection).length} Rows
 						</Button>
 					)}
 					{search && (
@@ -260,110 +271,132 @@ const MyTable = ({
 				</Center>
 			) : (
 				<TableContainer whiteSpace="normal">
-					{isLoading ? (
+					{/* {isLoading ? (
 						<Center py={3}>{loaderComponent || "Loading data..."}</Center>
-					) : (
-						<Table
-							variant={tableStyle.variant || "simple"}
-							colorScheme={tableStyle.colorScheme || "primary"}
-							size={tableStyle.size || "md"}
+					) : ( */}
+					<Table
+						variant={tableStyle.variant || "simple"}
+						colorScheme={tableStyle.colorScheme || "primary"}
+						size={tableStyle.size || "md"}
+						_light={{
+							bg: tableStyle.bg || "white",
+						}}
+						_dark={{
+							bg: "gray.600",
+							color: "white",
+						}}
+						pos={"relative"}
+					>
+						<Thead
 							_light={{
-								bg: tableStyle.bg || "white",
+								bg: tableStyle.headBg || "white",
 							}}
 							_dark={{
-								bg: "gray.600",
-								color: "white",
+								bg: "gray.900",
 							}}
 						>
-							<Thead
-								_light={{
-									bg: tableStyle.headBg || "white",
-								}}
-								_dark={{
-									bg: "gray.900",
-								}}
-							>
-								{table.getHeaderGroups().map((headerGroup) => (
-									<Tr key={headerGroup.id}>
-										{headerGroup.headers.map((header) => (
-											<Th
-												key={header.id}
-												whiteSpace="nowrap"
-												colSpan={header.colSpan}
-												cursor="pointer"
-												borderWidth={2}
-												borderColor="gray.300"
-												paddingBlock={tableStyle.headPadding || 4}
-												{...{
-													onClick: sort
-														? header.column.getToggleSortingHandler()
-														: () => {},
-												}}
-											>
-												{header.isPlaceholder
-													? null
-													: flexRender(
-															header.column.columnDef.header,
-															header.getContext()
-													  )}
-												{{
-													asc: " 🔼",
-													desc: " 🔽",
-												}[header.column.getIsSorted()] ?? null}
-											</Th>
-										))}
-									</Tr>
-								))}
-							</Thead>
-							<Tbody>
-								{table.getRowModel().rows.map((row) => (
-									<Tr
-										key={row.id}
-										_light={{
-											bg: row.getIsSelected() ? "gray.300" : tableStyle.bg,
-										}}
-										_dark={{
-											bg: row.getIsSelected() ? "gray.600" : "gray.800",
-										}}
-									>
-										{row.getVisibleCells().map((cell) => (
-											<Td
-												key={cell.id}
-												isNumeric={cell.column.columnDef.isNumeric}
-												borderWidth={2}
-												borderColor="gray.300"
-											>
-												{cell.column.columnDef.tooltip ? (
-													<Tooltip
-														label={flexRender(
+							{table.getHeaderGroups().map((headerGroup) => (
+								<Tr key={headerGroup.id}>
+									{headerGroup.headers.map((header) => (
+										<Th
+											key={header.id}
+											whiteSpace="nowrap"
+											colSpan={header.colSpan}
+											cursor="pointer"
+											borderWidth={2}
+											borderColor="gray.300"
+											backgroundColor={"gray.200"}
+											paddingBlock={tableStyle.headPadding || 4}
+											textAlign="center"
+											width={
+												header.column.columnDef.width &&
+												header.column.columnDef.width
+											}
+											{...{
+												onClick: sort
+													? header.column.getToggleSortingHandler()
+													: () => {},
+											}}
+										>
+											{header.isPlaceholder
+												? null
+												: flexRender(
+														header.column.columnDef.header,
+														header.getContext()
+												  )}
+											{{
+												asc: " 🔼",
+												desc: " 🔽",
+											}[header.column.getIsSorted()] ?? null}
+										</Th>
+									))}
+								</Tr>
+							))}
+						</Thead>
+						<Tbody>
+							{table.getRowModel().rows.map((row) => (
+								<Tr
+									key={row.id}
+									_light={{
+										bg: row.getIsSelected() ? "gray.300" : tableStyle.bg,
+									}}
+									_dark={{
+										bg: row.getIsSelected() ? "gray.600" : "gray.800",
+									}}
+								>
+									{row.getVisibleCells().map((cell) => (
+										<Td
+											key={cell.id}
+											isNumeric={cell.column.columnDef.isNumeric}
+											borderWidth={2}
+											borderColor="gray.300"
+											textAlign="center"
+										>
+											{cell.column.columnDef.tooltip ? (
+												<Tooltip
+													label={flexRender(
+														cell.column.columnDef.cell,
+														cell.getContext()
+													)}
+													hasArrow
+													arrowSize={15}
+												>
+													<Text
+														noOfLines={cell.column.columnDef.noOfLines || 1}
+														as={Box}
+													>
+														{flexRender(
 															cell.column.columnDef.cell,
 															cell.getContext()
 														)}
-														hasArrow
-														arrowSize={15}
-													>
-														<Text
-															noOfLines={cell.column.columnDef.noOfLines || 1}
-															as={Box}
-														>
-															{flexRender(
-																cell.column.columnDef.cell,
-																cell.getContext()
-															)}
-														</Text>
-													</Tooltip>
-												) : (
-													flexRender(
-														cell.column.columnDef.cell,
-														cell.getContext()
-													)
-												)}
-												{/* {} */}
-											</Td>
-										))}
-									</Tr>
-								))}
-							</Tbody>
+													</Text>
+												</Tooltip>
+											) : (
+												flexRender(
+													cell.column.columnDef.cell,
+													cell.getContext()
+												)
+											)}
+											{/* {} */}
+										</Td>
+									))}
+								</Tr>
+							))}
+						</Tbody>
+						{isLoading && (
+							<Center
+								pos={"absolute"}
+								top={0}
+								left={0}
+								py={3}
+								w={"full"}
+								h="full"
+								bg="whiteAlpha.800"
+							>
+								{loaderComponent || "Loading data..."}
+							</Center>
+						)}
+						{footer && (
 							<Tfoot>
 								{table.getFooterGroups().map((footerGroup) => (
 									<Tr key={footerGroup.id}>
@@ -380,8 +413,9 @@ const MyTable = ({
 									</Tr>
 								))}
 							</Tfoot>
-						</Table>
-					)}
+						)}
+					</Table>
+					{/* )} */}
 				</TableContainer>
 			)}
 			<Box
@@ -400,49 +434,11 @@ const MyTable = ({
 						{table.getPreFilteredRowModel().rows.length} Rows Selected
 					</Text>
 				)}
-				<HStack spacing={5}>
-					<HStack>
-						<Text>Page</Text>
-						<Text as={"strong"}>
-							{table.getState().pagination.pageIndex + 1} of{" "}
-							{table.getPageCount()}
-						</Text>
-					</HStack>
-					<ButtonGroup colorScheme="primary" isAttached>
-						<Button
-							onClick={() => table.setPageIndex(0)}
-							disabled={!table.getCanPreviousPage()}
-							size={tableStyle.size}
-						>
-							{"<<"}
-						</Button>
-
-						<Button
-							onClick={() => table.previousPage()}
-							disabled={!table.getCanPreviousPage()}
-							size={tableStyle.size}
-						>
-							{"<"}
-						</Button>
-
-						<Button
-							borderRadius="0"
-							onClick={() => table.nextPage()}
-							disabled={!table.getCanNextPage()}
-							size={tableStyle.size}
-						>
-							{">"}
-						</Button>
-
-						<Button
-							onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-							disabled={!table.getCanNextPage()}
-							size={tableStyle.size}
-						>
-							{">>"}
-						</Button>
-					</ButtonGroup>
-				</HStack>
+				<Pagination
+					table={table}
+					tableStyle={tableStyle}
+					pagination={pagination}
+				/>
 			</Box>
 		</>
 	);
@@ -495,9 +491,9 @@ export const selectable = {
 	header: ({ table }) => (
 		<IndeterminateCheckbox
 			{...{
-				isChecked: table.getIsAllRowsSelected(),
+				isChecked: table.getIsAllPageRowsSelected(),
 				isIndeterminate: table.getIsSomeRowsSelected(),
-				onChange: table.getToggleAllRowsSelectedHandler(),
+				onChange: table.getToggleAllPageRowsSelectedHandler(),
 			}}
 		/>
 	),
@@ -526,3 +522,84 @@ export const IndeterminateCheckbox = ({ ...rest }) => {
 		</>
 	);
 };
+
+export const Pagination = ({ tableStyle, pagination }) => {
+	return (
+		<HStack spacing={5}>
+			<HStack>
+				<Text>Page</Text>
+				<Text as={"strong"}>
+					{pagination.pageNo} of {pagination.totalPages}
+				</Text>
+			</HStack>
+			<ButtonGroup colorScheme="primary" isAttached>
+				<Button
+					borderRadius="0"
+					size={tableStyle.size}
+					colorScheme={"primary"}
+					onClick={() => pagination.onChange(1)}
+					disabled={pagination.pageNo === 1}
+				>
+					{"<<"}
+				</Button>
+				<Button
+					disabled={pagination.pageNo === 1}
+					borderRadius="0"
+					size={tableStyle.size}
+					colorScheme={"primary"}
+					onClick={() => pagination.onChange(pagination.pageNo - 1)}
+				>
+					{"<"}
+				</Button>
+
+				{/* {Array(pagination.totalPages)
+					.fill(1)
+					.slice(0, 10)
+					.map((pn, i) => (
+						<Button
+							key={i}
+							borderRadius="0"
+							size={tableStyle.size}
+							colorScheme={
+								pagination.pageNo === i + 1 ? "secondary" : "primary"
+							}
+							onClick={() => pagination.onChange(i + 1)}
+						>
+							{i + 1}
+						</Button>
+					))} */}
+				<Button
+					disabled={pagination.pageNo === pagination.totalPages}
+					borderRadius="0"
+					size={tableStyle.size}
+					colorScheme={"primary"}
+					onClick={() => pagination.onChange(pagination.pageNo + 1)}
+				>
+					{">"}
+				</Button>
+				<Button
+					borderRadius="0"
+					size={tableStyle.size}
+					colorScheme={"primary"}
+					onClick={() => pagination.onChange(pagination.totalPages)}
+					disabled={pagination.pageNo === pagination.totalPages}
+				>
+					{">>"}
+				</Button>
+			</ButtonGroup>
+		</HStack>
+	);
+};
+
+// export const usePagination = ({
+// 	totalCount,
+// 	pageSize,
+// 	siblingCount = 1,
+// 	currentPage,
+// }) => {
+// 	const paginationRange = useMemo(() => {
+// 		// Our implementation logic will go here
+// 	}, [totalCount, pageSize, siblingCount, currentPage]);
+
+// 	return paginationRange;
+// };

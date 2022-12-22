@@ -14,28 +14,14 @@ import { useEffect, useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { FiEye, FiTrash2 } from "react-icons/fi";
 import { BiEdit } from "react-icons/bi";
-// import { AiOutlineCalendar } from "react-icons/ai";
 
 const DataTable = () => {
 	const columnHelper = createColumnHelper();
 	const [data, setData] = useState([]);
-	const [search, setSearch] = useState("");
-	// const Filter = () => {
-	// 	return (
-	// 		<>
-	// 			<IconButton
-	// 				colorScheme="primary"
-	// 				aria-label="Search database"
-	// 				icon={<AiOutlineCalendar />}
-	// 			/>
-	// 			<IconButton
-	// 				colorScheme="primary"
-	// 				aria-label="Search database"
-	// 				icon={<AiOutlineCalendar />}
-	// 			/>
-	// 		</>
-	// 	);
-	// };
+	const [isLoading, setIsLoading] = useState(false);
+	const [pNo, setPNo] = useState(1);
+	const [pageSize, setPageSize] = useState("10");
+	const [totalPages, setTotalPages] = useState(0);
 
 	const columns = [
 		selectable,
@@ -44,13 +30,8 @@ const DataTable = () => {
 			cell: (info) => info.getValue(),
 			exportAble: true,
 		}),
-		columnHelper.accessor("title", {
-			header: "Title",
-			tooltip: true,
-			exportAble: true,
-		}),
-		columnHelper.accessor("body", {
-			header: "Body",
+		columnHelper.accessor("name", {
+			header: "Name",
 			tooltip: true,
 			exportAble: true,
 		}),
@@ -83,116 +64,32 @@ const DataTable = () => {
 			},
 		}),
 	];
-	// const columns = [
-	// 	selectable,
-	// 	columnHelper.accessor("id", {
-	// 		header: "ID",
-	// 		cell: (info) => info.getValue(),
-	// 		exportAble: true,
-	// 	}),
-	// 	columnHelper.accessor("name", {
-	// 		header: "Name",
-	// 		cell: (info) => info.renderValue(),
-	// 		tooltip: true,
-	// 		exportAble: true,
-	// 	}),
-	// 	columnHelper.accessor("username", {
-	// 		header: "User Name",
-	// 		tooltip: true,
-	// 		exportAble: true,
-	// 	}),
-	// 	columnHelper.accessor("email", {
-	// 		header: "Email",
-	// 		tooltip: true,
-	// 		exportAble: true,
-	// 	}),
-	// 	columnHelper.accessor("phone", {
-	// 		header: "Phone",
-	// 		tooltip: true,
-	// 		exportAble: true,
-	// 	}),
-	// 	columnHelper.accessor("website", {
-	// 		header: "Website",
-	// 		exportAble: true,
-	// 	}),
-	// 	// columnHelper.accessor("company", {
-	// 	// 	header: "Company Name",
-	// 	// 	cell: (info) => `${info.getValue().name}`,
-	// 	// 	tooltip: true,
-	// 	// 	exportAble: true,
-	// 	// }),
-	// 	// columnHelper.accessor("company", {
-	// 	// 	id: "companyCatchPhrase",
-	// 	// 	header: "Company Catch Phrase",
-	// 	// 	cell: (info) => `${info.getValue().catchPhrase}`,
-	// 	// 	tooltip: true,
-	// 	// 	noOfLines: 1,
-	// 	// 	exportAble: true,
-	// 	// }),
-	// 	// columnHelper.accessor("company", {
-	// 	// 	id: "companyBs",
-	// 	// 	header: "Company Bs",
-	// 	// 	cell: (info) => `${info.getValue().bs}`,
-	// 	// 	tooltip: true,
-	// 	// 	exportAble: true,
-	// 	// }),
-	// 	columnHelper.accessor("action", {
-	// 		header: "Action",
-	// 		exportAble: false,
-	// 		cell: (info) => {
-	// 			return (
-	// 				<ButtonGroup variant="solid" spacing={2}>
-	// 					<IconButton
-	// 						colorScheme="primary"
-	// 						aria-label="View"
-	// 						icon={<FiEye />}
-	// 					/>
-	// 					<IconButton
-	// 						colorScheme="yellow"
-	// 						aria-label="View"
-	// 						icon={<BiEdit />}
-	// 					/>
-	// 					<IconButton
-	// 						colorScheme="red"
-	// 						aria-label="Delete"
-	// 						icon={<FiTrash2 />}
-	// 					/>
-	// 				</ButtonGroup>
-	// 			);
-	// 		},
-	// 	}),
-	// ];
 	const deleteRows = async (rows) => {
 		const ids = rows.map((row) => row.original.id);
 		console.log(ids);
 	};
-
-	const handleFilter = async (value) => {
-		if (value) {
-			setSearch(String(value));
-			const filteredItems = data.filter((d1) => {
-				return (
-					d1.title?.toLowerCase().includes(value?.toLowerCase()) ||
-					d1.body?.toLowerCase().includes(value?.toLowerCase())
-				);
-			});
-			setData(filteredItems);
-		} else {
-			fetchData();
-		}
-	};
 	const fetchData = async () => {
-		const response = await fetch(
-			"https://jsonplaceholder.typicode.com/posts"
-			// "https://jsonplaceholder.typicode.com/users"
-		);
-		const json = await response.json();
-		setData(json);
+		setIsLoading(true);
+		try {
+			const response = await fetch(
+				`http://localhost:8080/names?page=${pNo}&limit=${pageSize}`
+			);
+			const json = await response.json();
+			if (json.status) {
+				setData(json.data);
+				setTotalPages(Math.ceil(json.count / +pageSize));
+			} else {
+				setData([]);
+			}
+		} catch (error) {
+			console.log(error);
+		}
+		setIsLoading(false);
 	};
 
 	useEffect(() => {
 		fetchData();
-	}, []);
+	}, [pNo, pageSize]);
 	return (
 		<Container maxW="6xl" bg="blue.200" minH={"100vh"} p={2}>
 			<Link as={RouterLink} to="/">
@@ -202,26 +99,28 @@ const DataTable = () => {
 				<Heading as="h2" size="xl" color="black" textAlign={"center"} mb={3}>
 					Data Table
 				</Heading>
-				<DebouncedInput
-					size={"sm"}
-					value={search ?? ""}
-					onChange={handleFilter}
-					placeholder="Search..."
-				/>
 				<MyTable
 					columns={columns}
 					data={data}
 					loaderComponent={<Spinner />}
-					// filterComponent={<Filter />}
-					// exportExcel={false}
-					// exportPdf={true}
+					isLoading={isLoading}
 					exportFileName="users"
-					deleteRows={deleteRows}
+					multiRows={{
+						show: true,
+						handlemultiple: deleteRows,
+					}}
 					tableStyle={{
 						variant: "simple",
 						colorScheme: "primary",
 						bg: "white",
 						size: "sm",
+					}}
+					pagination={{
+						totalPages,
+						pageNo: pNo,
+						pageSize,
+						setPageSize,
+						onChange: setPNo,
 					}}
 				/>
 			</Box>
